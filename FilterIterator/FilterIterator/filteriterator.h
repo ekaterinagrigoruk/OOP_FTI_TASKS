@@ -1,10 +1,12 @@
 #pragma once
 #include <iterator>
+#include <optional>
 
 
 namespace FilterIterator {
 
-    template <class Predicate, class Iterator>
+    template <class Predicate, class Iterator, typename T = std::enable_if<std::is_same<typename std::iterator_traits<Iterator>::iterator_category, std::forward_iterator_tag>::value>>
+
     class filter_iterator final {
     public:
         using value_type = typename std::iterator_traits<Iterator>::value_type;
@@ -18,6 +20,8 @@ namespace FilterIterator {
             m_first(first), m_end(end) {
             shift_iterator();
         };
+        filter_iterator(const Iterator& first, const Iterator& end = Iterator()) : m_pred(),
+            m_first(first), m_end(end) {};
        
         Predicate predicate() const {
             return m_pred;
@@ -49,12 +53,14 @@ namespace FilterIterator {
             return *this;
         };
     private:
-        Predicate m_pred;
+        std::optional<Predicate> m_pred;
         Iterator m_first;
         Iterator m_end;
         void shift_iterator() {
-            while (m_first != m_end && !m_pred(*m_first)) {
-                m_first++;
+            if (m_pred.has_value()) {
+                while (m_first != m_end && !(*m_pred)(*m_first)) {
+                    m_first++;
+                }
             }
         };
     };
@@ -63,6 +69,11 @@ namespace FilterIterator {
         template <class Predicate, class Iterator>
         filter_iterator<Predicate, Iterator> make_filter_iterator(Predicate f, const Iterator& first, const Iterator& end = Iterator()) {
             return filter_iterator<Predicate, Iterator>(f, first, end);
+        }
+
+        template <class Predicate, class Iterator>
+        filter_iterator<Predicate, Iterator> make_filter_iterator(const Iterator& first, const Iterator& end = Iterator()) {
+            return filter_iterator<Iterator>(first, end);
         }
     }
     
