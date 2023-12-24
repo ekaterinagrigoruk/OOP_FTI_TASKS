@@ -25,6 +25,9 @@ public:
     rwlock& operator=(const rwlock& other) = delete;
 
     rwlock& operator=(rwlock&& other) noexcept {
+        if (this == &other) {
+            return *this;
+        }
         std::unique_lock<std::mutex> lock(m, std::defer_lock);
         std::unique_lock<std::mutex> lock_other(other.m, std::defer_lock);
         std::lock(lock, lock_other);
@@ -42,7 +45,15 @@ public:
         cond_var.notify_all();
     };
 
-    bool read_lock(int64_t timeOut = -1) {
+    const int get_readers() {
+        return readers;
+    };
+
+    const bool get_writer() {
+        return writer;
+    }
+
+    const bool read_lock(int64_t timeOut = -1) {
         std::unique_lock<std::mutex> lock(m);
         if (writer) {
             if (timeOut < 0) {
@@ -66,7 +77,7 @@ public:
         }
     };
 
-    bool write_lock(int64_t timeOut = -1) {
+    const bool write_lock(int64_t timeOut = -1) {
         std::unique_lock<std::mutex> lock(m);
         if (readers > 0 || writer) {
             if (timeOut < 0) {

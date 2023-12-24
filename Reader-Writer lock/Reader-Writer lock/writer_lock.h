@@ -27,14 +27,14 @@ public:
         }
     };
 
-    bool is_locked() {
+    const bool is_locked() {
         return locked;
     };
 
     bool lock(int64_t timeout = -1) {
-        if (!locked && parent.write_lock(timeout)) {
-            locked = true;
-            return true;
+        if (!locked) {
+            locked = parent.write_lock(timeout);
+            return locked;
         }
         return false;
     };
